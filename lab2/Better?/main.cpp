@@ -4,8 +4,6 @@
 #include "tests.hpp"
 #define SIZE 400
 
-//#include "sts-2.1.2/include/stat_fncs.h"
-//#include "sts-2.1.2/include/externs.h"
 
 int LFSR_3(unsigned int* S) {  //x^3 + x + 1
     *S = ((((*S >> 1) ^ *S ) & 0x1 ) << 2) | (*S >> 1);
@@ -20,49 +18,19 @@ int LFSR_7(unsigned int* S) {  //x^7 + x + 1
     return *S & 0x1;
 }
 
-void period_counter(int a[]) {
-    bool b = true;
-    int T = 1;
-    for (T = 1; T < SIZE-1; T++) {
-        if (a[T]!=a[0]) {
-            continue;
-        }
-        b = true;
-        for (int i=0; i < SIZE-T; i++) {
-            if (a[T+i]!=a[i]) {
-                b = false;
-                break;
-            }
-        }
-        if (b == true) {
-            break;
-        }
-    }
-    if (b == true) {
-        std::cout << "\nPeriod is " << T << "\n";
-    } else {
-        std::cout << "\nNo period. :-(\n";
-    }
-}
-
 void frequency_test(int a[]) {
     float sum = 0;
     for (int i = 0; i < SIZE; i++) {
         sum += 2*a[i]-1;
-//        sum += a[i];
     }
     sum /= sqrt(2*SIZE);
-//    sum /= sqrt(2);
-//    float fx = (2/sqrt(SIZE))*(sum-SIZE/2);
     float p_value = erfc(sum);
     
-//    if (-3 < fx && fx < 3) {
     if (p_value > 0.001) {
         printf("✅ Частотный тест пройден");
     } else {
         printf("❌ Частотный тест не пройден");
     }
-//    printf(" (%.1f)\n", fx);
 }
 void series_test(int a[]) {
     int count_0 = 0;
@@ -126,10 +94,9 @@ void stat_properties(int a[]) {
     LongestRunOfOnes(SIZE, a);
     Runs(SIZE, a);
     Serial(11, SIZE, a);
-//    Universal(SIZE, a);
-    LinearComplexity(11, SIZE, a);
-//    frequency_test(a);
-    series_test(a);
+//    LinearComplexity(11, SIZE, a);    // не используем, потому что выдает что-то невнятное
+//    frequency_test(a);                // не используем, потому что это самонаписанный тесты (а есть NIST)
+//    series_test(a);                   // не используем, потому что это самонаписанный тесты (а есть NIST)
 }
 
 int main(int argc, const char * argv[]) {
@@ -137,75 +104,82 @@ int main(int argc, const char * argv[]) {
     unsigned int state_2 = 0x15;
     unsigned int state_3 = 0x42;
     int a[SIZE];
-//    for (int i = 0; i < SIZE; i++) {
-//        int bit1 = LFSR_3(&state_1);
-//        int bit2 = LFSR_5(&state_2);
-//        int bit3 = LFSR_7(&state_3);
-////        a[i] = (bit1&bit2)^(bit2&bit3)^bit3;
-//        a[i] = (bit1&bit2)^(bit2&bit3)^bit3;
-//        std::cout << a[i];
-//    }
-//    for (int i = 0; i < SIZE; i++) {
-//        if (LFSR_7(&state_3) == 1) {
-//            a[i] = LFSR_3(&state_1);
-//        } else {
-//            a[i] = LFSR_5(&state_2);
-//        }
-//        std::cout << a[i];
-//    }
-//    for (int i = 0; i < SIZE; i++) {
-//        a[i] = LFSR_7(&state_1);
-//        std::cout << a[i];
-//    }
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                        Г Е Н Е Р А Т О Р  C  Л Е К Ц И И
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    for (int i = 0; i < SIZE; i++) {
+        if (LFSR_7(&state_3) == 1) {
+            a[i] = LFSR_3(&state_1);
+        } else {
+            a[i] = LFSR_5(&state_2);
+        }
+        std::cout << a[i];
+    }
+    */
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                           Г Е Н Е Р А Т О Р  Г Е Ф Ф А
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    for (int i = 0; i < SIZE; i++) {
+        int bit1 = LFSR_3(&state_1);
+        int bit2 = LFSR_5(&state_2);
+        int bit3 = LFSR_7(&state_3);
+        a[i] = (bit1&bit2)^(bit2&bit3)^bit3;
+        std::cout << a[i];
+    }
+    */
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                    М А Ж О Р И Т А Р Н Ы Й  Г Е Н Е Р А Т О Р
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    int f1 = LFSR_3(&state_1);
+    int s2 = LFSR_5(&state_2);
+    int t3 = LFSR_7(&state_3);
+    for (int i = 0; i < SIZE; i++) {
+        if (f1+s2+t3 >= 2) {
+            if (f1 == 1) {
+                f1 = LFSR_3(&state_1);
+            }
+            if (s2 == 1) {
+                s2 = LFSR_5(&state_2);
+            }
+            if (t3 == 1) {
+                t3 = LFSR_7(&state_3);
+            }
+            a[i] = 1;
+        } else {
+            if (f1 == 0) {
+                f1 = LFSR_3(&state_1);
+            }
+            if (s2 == 0) {
+                s2 = LFSR_5(&state_2);
+            }
+            if (t3 == 0) {
+                t3 = LFSR_7(&state_3);
+            }
+            a[i] = 0;
+        }
+        std::cout << a[i];
+    }
+    */
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                Г Е Н Е Р А Т О Р  П Е Р Е М Е Н Н О Г О  Ш А Г А
+    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     int was0 = 0;
     int was1 = 0;
     for (int i = 0; i < SIZE; i++) {
         if (LFSR_7(&state_3) == 0) {
-//            LFSR_5(&state_2);
             was0 = LFSR_3(&state_1);
-//            a[i] = was0;
         } else {
-//            LFSR_3(&state_1);
             was1 = LFSR_5(&state_2);
-//            a[i] = was1^was0;
         }
         a[i] = was0^was1;
         std::cout << a[i];
     }
-//    int f1 = LFSR_3(&state_1);
-//    int s2 = LFSR_5(&state_2);
-//    int t3 = LFSR_7(&state_3);
-//    for (int i = 0; i < SIZE; i++) {
-//        if (f1+s2+t3 >= 2) {
-//            if (f1 == 1) {
-//                f1 = LFSR_3(&state_1);
-//            }
-//            if (s2 == 1) {
-//                s2 = LFSR_5(&state_2);
-//            }
-//            if (t3 == 1) {
-//                t3 = LFSR_7(&state_3);
-//            }
-//            a[i] = 1;
-//        } else {
-//            if (f1 == 0) {
-//                f1 = LFSR_3(&state_1);
-//            }
-//            if (s2 == 0) {
-//                s2 = LFSR_5(&state_2);
-//            }
-//            if (t3 == 0) {
-//                t3 = LFSR_7(&state_3);
-//            }
-//            a[i] = 0;
-//        }
-//        std::cout << a[i];
-//    }
-//    for (int i = 0; i < SIZE; i++) {
-//        a[i] = LFSR_7(&state_1);
-//        std::cout << a[i];
-//    }
-    period_counter(a);
+    
+    std::cout << "\n\n";
+//    period_counter(a);
     stat_properties(a);
 }
 
